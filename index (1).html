@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weather Analytics Dashboard</title>
+
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f4f6f8;
+            margin: 0;
+            padding: 25px;
+        }
+
+        h1 {
+            text-align: center;
+            color: #222;
+        }
+
+        .search {
+            text-align: center;
+            margin: 25px;
+        }
+
+        input {
+            padding: 12px;
+            width: 300px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+        }
+
+        button {
+            padding: 12px 20px;
+            margin-left: 8px;
+            font-size: 16px;
+            border: none;
+            border-radius: 6px;
+            background: #2563eb;
+            color: white;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #1d4ed8;
+        }
+
+        #location {
+            text-align: center;
+            font-size: 22px;
+            font-weight: bold;
+            margin: 20px;
+        }
+
+        .cards {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+        }
+
+        .card {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+
+        .card h3 {
+            margin: 5px;
+            color: #555;
+        }
+
+        .value {
+            font-size: 25px;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+
+        .chart {
+            background: white;
+            margin-top: 20px;
+            padding: 10px;
+            border-radius: 12px;
+        }
+
+        @media(max-width: 800px) {
+            .cards {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<h1>🌦️ Weather Analytics Dashboard</h1>
+
+<div class="search">
+    <input
+        type="text"
+        id="city"
+        placeholder="Enter city e.g. Durgapur"
+    >
+    <button onclick="getWeather()">🔍 Search</button>
+</div>
+
+<div id="location">Enter a city to see weather</div>
+
+<div class="cards">
+
+    <div class="card">
+        <h3>🌡️ Temperature</h3>
+        <div class="value" id="temperature">--</div>
+    </div>
+
+    <div class="card">
+        <h3>🌡️ Feels Like</h3>
+        <div class="value" id="feels">--</div>
+    </div>
+
+    <div class="card">
+        <h3>💧 Humidity</h3>
+        <div class="value" id="humidity">--</div>
+    </div>
+
+    <div class="card">
+        <h3>🌬️ Wind Speed</h3>
+        <div class="value" id="wind">--</div>
+    </div>
+
+    <div class="card">
+        <h3>🔵 Pressure</h3>
+        <div class="value" id="pressure">--</div>
+    </div>
+
+    <div class="card">
+        <h3>🌧️ Rainfall</h3>
+        <div class="value" id="rain">--</div>
+    </div>
+
+    <div class="card">
+        <h3>☁️ Cloud Cover</h3>
+        <div class="value" id="cloud">--</div>
+    </div>
+
+    <div class="card">
+        <h3>🌤️ Condition</h3>
+        <div class="value" id="condition">--</div>
+    </div>
+
+</div>
+
+<div class="chart">
+    <div id="temperatureChart"></div>
+</div>
+
+<div class="chart">
+    <div id="rainChart"></div>
+</div>
+
+<div class="chart">
+    <div id="windChart"></div>
+</div>
+
+<script>
+
+async function getWeather() {
+
+    const city = document.getElementById("city").value.trim();
+
+    if (city === "") {
+        alert("Please enter a city name");
+        return;
+    }
+
+    try {
+
+        // Ask the Python Flask backend for weather data
+        const response = await fetch(
+            `/weather?city=${encodeURIComponent(city)}`
+        );
+
+        const data = await response.json();
+
+        if (data.error) {
+            alert(data.error);
+            return;
+        }
+
+        const current = data.current;
+        const daily = data.daily;
+
+        document.getElementById("location").innerHTML =
+            `📍 ${data.city}, ${data.country}`;
+
+        document.getElementById("temperature").innerHTML =
+            current.temperature_2m + " °C";
+
+        document.getElementById("feels").innerHTML =
+            current.apparent_temperature + " °C";
+
+        document.getElementById("humidity").innerHTML =
+            current.relative_humidity_2m + " %";
+
+        document.getElementById("wind").innerHTML =
+            current.wind_speed_10m + " km/h";
+
+        document.getElementById("pressure").innerHTML =
+            current.surface_pressure + " hPa";
+
+        document.getElementById("rain").innerHTML =
+            current.precipitation + " mm";
+
+        document.getElementById("cloud").innerHTML =
+            current.cloud_cover + " %";
+
+        const conditions = {
+            0: "Clear Sky",
+            1: "Mainly Clear",
+            2: "Partly Cloudy",
+            3: "Overcast",
+            45: "Fog",
+            48: "Fog",
+            51: "Light Drizzle",
+            53: "Drizzle",
+            55: "Heavy Drizzle",
+            61: "Light Rain",
+            63: "Rain",
+            65: "Heavy Rain",
+            71: "Light Snow",
+            73: "Snow",
+            75: "Heavy Snow",
+            80: "Rain Showers",
+            81: "Rain Showers",
+            82: "Heavy Rain",
+            95: "Thunderstorm",
+            96: "Thunderstorm",
+            99: "Thunderstorm"
+        };
+
+        document.getElementById("condition").innerHTML =
+            conditions[current.weather_code] || "Unknown";
+
+        Plotly.newPlot("temperatureChart", [
+            {
+                x: daily.time,
+                y: daily.temperature_2m_max,
+                mode: "lines+markers",
+                name: "Maximum"
+            },
+            {
+                x: daily.time,
+                y: daily.temperature_2m_min,
+                mode: "lines+markers",
+                name: "Minimum"
+            }
+        ], {
+            title: "🌡️ 7-Day Temperature Forecast",
+            xaxis: {title: "Date"},
+            yaxis: {title: "Temperature (°C)"},
+            responsive: true
+        });
+
+        Plotly.newPlot("rainChart", [
+            {
+                x: daily.time,
+                y: daily.precipitation_sum,
+                type: "bar",
+                name: "Rainfall"
+            }
+        ], {
+            title: "🌧️ 7-Day Rainfall Forecast",
+            xaxis: {title: "Date"},
+            yaxis: {title: "Rainfall (mm)"},
+            responsive: true
+        });
+
+        Plotly.newPlot("windChart", [
+            {
+                x: daily.time,
+                y: daily.wind_speed_10m_max,
+                type: "bar",
+                name: "Wind Speed"
+            }
+        ], {
+            title: "🌬️ 7-Day Wind Speed Forecast",
+            xaxis: {title: "Date"},
+            yaxis: {title: "Wind Speed (km/h)"},
+            responsive: true
+        });
+
+    } catch (error) {
+        alert("Unable to connect to the weather server.");
+        console.error(error);
+    }
+}
+
+document.getElementById("city").addEventListener("keypress", function(event) {
+    if (event.key === "Enter") {
+        getWeather();
+    }
+});
+
+</script>
+
+</body>
+</html>
